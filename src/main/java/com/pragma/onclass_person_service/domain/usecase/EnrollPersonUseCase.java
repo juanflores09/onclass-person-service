@@ -56,8 +56,10 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
                                                 BootcampDetailsDTO targetBootcamp = allBootcamps.stream()
                                                         .filter(b -> b.getId().equals(targetBootcampId))
                                                         .findFirst()
-                                                        .orElseThrow(() -> new BusinessException(
-                                                                Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.INTERNAL_ERROR));
+                                                        .orElseThrow(() ->
+                                                            new BusinessException(
+                                                                    Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.BOOTCAMP_NOT_FOUND)
+                                                        );
 
                                                 List<BootcampDetailsDTO> activeBootcamps = allBootcamps.stream()
                                                         .filter(b -> !b.getId().equals(targetBootcampId))
