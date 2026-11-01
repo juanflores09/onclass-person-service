@@ -1,0 +1,27 @@
+package com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters;
+
+import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
+import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.BootcampPersonEntity;
+import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.repository.SpringDataBootcampPersonRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@Repository
+@RequiredArgsConstructor
+public class BootcampPersonPersistenceAdapter implements BootcampPersonPersistencePort {
+
+    private final SpringDataBootcampPersonRepository bootcampPersonRepository;
+
+    @Override
+    public Flux<Long> findBootcampIdsByPersonId(Long personId) {
+        return bootcampPersonRepository.findBootcampIdsByPersonId(personId);
+    }
+
+    @Override
+    public Mono<Void> saveEnrollment(Long personId, Long bootcampId) {
+        BootcampPersonEntity entity = new BootcampPersonEntity(personId, bootcampId);
+        return bootcampPersonRepository.save(entity).then();
+    }
+}
