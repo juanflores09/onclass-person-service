@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Person Microservice API
+  description: Microservicio encargado de la gestión de personas, inscripciones a bootcamps, validaciones de negocio (solapamientos, límites) y reportes de popularidad.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8083
+    description: Servidor Local
+
+paths:
+  /api/v1/persons/enroll:
+    post:
+      summary: Inscribir una persona a un bootcamp
+      description: Registra o recupera la información de una persona y procesa su inscripción al bootcamp validando reglas de negocio (máximo 5 bootcamps, duplicados y solapamiento de fechas).
+      parameters:
+        - name: x-message-id
+          in: header
+          required: false
+          description: Identificador único de traza del mensaje
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonEnrollmentRequestDTO'
+      responses:
+        '201':
+          description: Persona inscrita exitosamente (No Content body)
+        '400':
+          description: Parámetros inválidos o violación de reglas de negocio (ej. límite excedido, ya inscrito, solapamiento)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseDTO'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseDTO'
+
+  /api/v1/persons/reports/most-popular-enrollments:
+    get:
+      summary: Obtener reporte de inscripciones del bootcamp más popular
+      description: Retorna el ID del bootcamp con mayor cantidad de inscritos, el total de personas y el detalle de cada una de ellas.
+      parameters:
+        - name: x-message-id
+          in: header
+          required: false
+          description: Identificador único de traza del mensaje
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reporte obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MostPopularEnrollmentResponseDTO'
+        '400':
+          description: No hay bootcamps con inscripciones registradas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseDTO'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseDTO'
+
+components:
+  schemas:
+    PersonEnrollmentRequestDTO:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - documentNumber
+        - age
+        - bootcampId
+      properties:
+        firstName:
+          type: string
+          example: "Juan"
+        lastName:
+          type: string
+          example: "Pérez"
+        email:
+          type: string
+          format: email
+          example: "juan.perez@example.com"
+        documentNumber:
+          type: string
+          example: "12345678"
+        age:
+          type: integer
+          example: 28
+        bootcampId:
+          type: integer
+          format: int64
+          example: 1
+
+    MostPopularEnrollmentResponseDTO:
+      type: object
+      properties:
+        bootcampId:
+          type: integer
+          format: int64
+          example: 1
+        totalEnrolled:
+          type: integer
+          format: int64
+          example: 15
+        enrolledPersons:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrolledPersonDTO'
+
+    EnrolledPersonDTO:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          example: "juan.perez@example.com"
+
+    ApiResponseDTO:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "MAX_BOOTCAMPS_EXCEEDED"
+        message:
+          type: string
+          example: "La persona ya ha alcanzado el límite máximo de bootcamps activos."
+        identifier:
+          type: string
+          example: "msg-uuid-1234"
+        date:
+          type: string
+          example: "2026-11-02T18:45:00Z"
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDTO'
+
+    ErrorDTO:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "MAX_BOOTCAMPS_EXCEEDED"
+        message:
+          type: string
+          example: "Límite de bootcamps excedido"
