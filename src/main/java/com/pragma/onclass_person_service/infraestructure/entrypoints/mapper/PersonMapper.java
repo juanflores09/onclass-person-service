@@ -34,8 +34,8 @@ public class PersonMapper {
 
     public Person personEnrollmentRequestDTOToPerson(PersonEnrollmentRequestDTO enrollmentRequestDTO){
         return new Person(
-                enrollmentRequestDTO.firstName(),
                 enrollmentRequestDTO.lastName(),
+                enrollmentRequestDTO.firstName(),
                 enrollmentRequestDTO.email(),
                 enrollmentRequestDTO.documentNumber(),
                 enrollmentRequestDTO.age()
