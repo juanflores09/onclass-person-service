@@ -15,6 +15,7 @@ public class PersonRouter {
     public RouterFunction<ServerResponse> personRoutes(PersonHandler handler) {
         return route()
                 .POST("/api/v1/persons/enroll", handler::enrollPerson)
+                .GET("/api/v1/persons/reports/most-popular-enrollments", handler::getMostPopularEnrollments)
                 .build();
     }
 }

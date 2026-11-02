@@ -1,11 +1,12 @@
 package com.pragma.onclass_person_service.application.config;
 
 import com.pragma.onclass_person_service.domain.api.EnrollPersonServicePort;
+import com.pragma.onclass_person_service.domain.api.GetMostPopularEnrollmentsServicePort;
 import com.pragma.onclass_person_service.domain.spi.BootcampGateway;
 import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
 import com.pragma.onclass_person_service.domain.spi.PersonPersistencePort;
 import com.pragma.onclass_person_service.domain.usecase.EnrollPersonUseCase;
-import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.PersonMapper;
+import com.pragma.onclass_person_service.domain.usecase.GetMostPopularEnrollmentsUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,10 +17,15 @@ public class UseCaseConfig {
     public EnrollPersonServicePort enrollPersonServicePort(
             PersonPersistencePort personPersistencePort,
             BootcampPersonPersistencePort bootcampPersonPersistencePort,
-            BootcampGateway bootcampGateway,
-            PersonMapper personMapper
+            BootcampGateway bootcampGateway
     ){
         return new EnrollPersonUseCase(personPersistencePort, bootcampPersonPersistencePort,
-                bootcampGateway, personMapper);
+                bootcampGateway);
+    }
+
+    @Bean
+    public GetMostPopularEnrollmentsServicePort getMostPopularEnrollmentsServicePort(
+            BootcampPersonPersistencePort bootcampPersonPersistencePort){
+        return new GetMostPopularEnrollmentsUseCase(bootcampPersonPersistencePort);
     }
 }

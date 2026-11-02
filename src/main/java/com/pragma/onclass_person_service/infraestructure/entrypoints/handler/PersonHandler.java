@@ -1,10 +1,13 @@
 package com.pragma.onclass_person_service.infraestructure.entrypoints.handler;
 
 import com.pragma.onclass_person_service.domain.api.EnrollPersonServicePort;
+import com.pragma.onclass_person_service.domain.api.GetMostPopularEnrollmentsServicePort;
 import com.pragma.onclass_person_service.domain.enums.TechnicalMessage;
 import com.pragma.onclass_person_service.domain.exceptions.BusinessException;
+import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.dto.ApiResponseDTO;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.dto.PersonEnrollmentRequestDTO;
+import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.PersonMapper;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.ErrorDTO;
 import jakarta.validation.ConstraintViolation;
@@ -12,6 +15,7 @@ import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -29,6 +33,8 @@ import java.util.Set;
 public class PersonHandler {
 
     private final EnrollPersonServicePort enrollPersonServicePort;
+    private final GetMostPopularEnrollmentsServicePort getMostPopularEnrollmentsServicePort;
+    private final PersonMapper personMapper;
     private final Validator validator;
 
     public Mono<ServerResponse> enrollPerson(ServerRequest request) {
@@ -42,8 +48,8 @@ public class PersonHandler {
                         String errorMessage = violations.iterator().next().getMessage();
                         return Mono.error(new BusinessException(errorMessage, TechnicalMessage.INVALID_PARAMETERS));
                     }
-
-                    return enrollPersonServicePort.enrollPerson(requestDTO, messageId)
+                    Person person = personMapper.personEnrollmentRequestDTOToPerson(requestDTO);
+                    return enrollPersonServicePort.enrollPerson(person, requestDTO.bootcampId(), messageId)
                             .doOnSuccess(unused -> log.info("Person successfully enrolled with email: {} to bootcampId: {} with messageId: {}",
                                     requestDTO.email(), requestDTO.bootcampId(), messageId))
                             .then(ServerResponse.status(HttpStatus.CREATED).build());
@@ -55,7 +61,7 @@ public class PersonHandler {
                         ex.getTechnicalMessage(),
                         List.of(ErrorDTO.builder()
                                 .code(ex.getTechnicalMessage().getCode())
-                                .message(ex.getTechnicalMessage().getMessage())
+                                .message(ex.getMessage())
                                 .build())
                 ))
                 .onErrorResume(ex -> {
@@ -84,5 +90,30 @@ public class PersonHandler {
                     .build();
             return ServerResponse.status(httpStatus).bodyValue(apiErrorResponse);
         });
+    }
+
+    public Mono<ServerResponse> getMostPopularEnrollments(ServerRequest request) {
+        String messageId = request.headers().firstHeader(Constants.X_MESSAGE_ID);
+
+        return getMostPopularEnrollmentsServicePort.execute(messageId)
+                .map(personMapper::mostPopularEnrollmentToResponseDTO)
+                .flatMap(response -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(response)
+                )
+                .contextWrite(Context.of(Constants.X_MESSAGE_ID, Objects.requireNonNull(messageId)))
+                .onErrorResume(BusinessException.class, ex -> buildErrorResponse(
+                        HttpStatus.BAD_REQUEST,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                                .code(ex.getTechnicalMessage().getCode())
+                                .message(ex.getTechnicalMessage().getMessage())
+                                .build())
+                ))
+                .onErrorResume(ex -> {
+                    log.error("[getMostPopularEnrollments] Error with messageId: {}", messageId, ex);
+                    return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                });
     }
 }

@@ -16,7 +16,7 @@ public record PersonEnrollmentRequestDTO(
         @Email(message = "El formato del correo es inválido")
         String email,
 
-        @Min(value = 18, message = "La edad mínima permitida es 18 años")
+        @Min(value = 15, message = "La edad mínima permitida es 15 años")
         Integer age,
 
         @Min(value = 18, message = "El número de documento no puede estar vacío")

@@ -4,7 +4,9 @@ import com.pragma.onclass_person_service.domain.exceptions.ExternalServiceExcept
 import com.pragma.onclass_person_service.domain.spi.BootcampGateway;
 import com.pragma.onclass_person_service.infraestructure.adapters.bootcampwebclientadapter.dto.BootcampDetailsDTO;
 import com.pragma.onclass_person_service.infraestructure.adapters.bootcampwebclientadapter.dto.BootcampIdsRequestDTO;
+import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.Bootcamp;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.dto.ApiResponseDTO;
+import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.BootcampMapper;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatusCode;
@@ -20,9 +22,10 @@ import java.util.List;
 public class BootcampWebClientAdapter implements BootcampGateway {
 
     private final WebClient bootcampWebClient;
+    private final BootcampMapper bootcampMapper;
 
     @Override
-    public Flux<BootcampDetailsDTO> getBootcampsDetails(List<Long> bootcampIds, String messageId) {
+    public Flux<Bootcamp> getBootcampsDetails(List<Long> bootcampIds, String messageId) {
         return bootcampWebClient.post()
                 .uri("/api/v1/bootcamps/batch")
                 .header(Constants.X_MESSAGE_ID, messageId)
@@ -32,7 +35,8 @@ public class BootcampWebClientAdapter implements BootcampGateway {
                         response.bodyToMono(ApiResponseDTO.class)
                                 .flatMap(errorResponse -> Mono.error(new ExternalServiceException(errorResponse)))
                 )
-                .bodyToFlux(BootcampDetailsDTO.class);
+                .bodyToFlux(BootcampDetailsDTO.class)
+                .map(bootcampMapper::bootcampDetailDtoToBootcamp);
     }
 
 }

@@ -7,9 +7,7 @@ import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.domain.spi.BootcampGateway;
 import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
 import com.pragma.onclass_person_service.domain.spi.PersonPersistencePort;
-import com.pragma.onclass_person_service.infraestructure.adapters.bootcampwebclientadapter.dto.BootcampDetailsDTO;
-import com.pragma.onclass_person_service.infraestructure.entrypoints.dto.PersonEnrollmentRequestDTO;
-import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.PersonMapper;
+import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.Bootcamp;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -22,12 +20,9 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
     private final PersonPersistencePort personPersistencePort;
     private final BootcampPersonPersistencePort bootcampPersonPersistencePort;
     private final BootcampGateway bootcampGateway;
-    private final PersonMapper personMapper;
 
     @Override
-    public Mono<Void> enrollPerson(PersonEnrollmentRequestDTO requestDTO, String messageId) {
-
-        Person person = personMapper.personEnrollmentRequestDTOToPerson(requestDTO);
+    public Mono<Void> enrollPerson(Person person, Long bootcampId, String messageId) {
 
         return personPersistencePort.saveOrGetPerson(person)
                 .flatMap(personId ->
@@ -35,32 +30,31 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
                                 .collectList()
                                 .flatMap(activeBootcampIds -> {
 
-                                    Long targetBootcampId = requestDTO.bootcampId();
                                     if(activeBootcampIds.size() >= 5){
                                         return Mono.error(new BusinessException(
                                                 Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.MAX_BOOTCAMPS_EXCEEDED));
                                     }
 
-                                    if(activeBootcampIds.contains(targetBootcampId)){
+                                    if(activeBootcampIds.contains(bootcampId)){
                                         return Mono.error(new BusinessException(
                                                 Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.ALREADY_ENROLLED));
                                     }
 
                                     List<Long> allBootcampIds = new java.util.ArrayList<>(activeBootcampIds);
-                                    allBootcampIds.add(targetBootcampId);
+                                    allBootcampIds.add(bootcampId);
 
                                     return bootcampGateway.getBootcampsDetails(allBootcampIds, messageId)
                                             .collectList()
                                             .flatMap(allBootcamps -> {
 
-                                                BootcampDetailsDTO targetBootcamp = allBootcamps.stream()
-                                                        .filter(b -> b.getId().equals(targetBootcampId))
+                                                Bootcamp targetBootcamp = allBootcamps.stream()
+                                                        .filter(b -> b.getId().equals(bootcampId))
                                                         .findFirst()
                                                         .orElseThrow(() -> new BusinessException(
                                                                 Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.INTERNAL_ERROR));
 
-                                                List<BootcampDetailsDTO> activeBootcamps = allBootcamps.stream()
-                                                        .filter(b -> !b.getId().equals(targetBootcampId))
+                                                List<Bootcamp> activeBootcamps = allBootcamps.stream()
+                                                        .filter(b -> !b.getId().equals(bootcampId))
                                                         .toList();
 
                                                 if (!activeBootcamps.isEmpty()) {
@@ -72,13 +66,13 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
                                                                 Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.DATE_OVERLAP));
                                                     }
                                                 }
-                                                return bootcampPersonPersistencePort.saveEnrollment(personId, targetBootcampId);
+                                                return bootcampPersonPersistencePort.saveEnrollment(personId, bootcampId);
                                             });
                                 })
                 );
     }
 
-    private boolean datesOverlap(BootcampDetailsDTO existing, BootcampDetailsDTO target) {
+    private boolean datesOverlap(Bootcamp existing, Bootcamp target) {
         return target.getStartDate().isBefore(existing.getEndDate()) &&
                 target.getEndDate().isAfter(existing.getStartDate());
     }
