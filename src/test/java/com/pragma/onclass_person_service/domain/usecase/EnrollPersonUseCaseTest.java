@@ -5,6 +5,7 @@ import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.domain.spi.BootcampGateway;
 import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
 import com.pragma.onclass_person_service.domain.spi.PersonPersistencePort;
+import com.pragma.onclass_person_service.domain.spi.ReportGatewayPort;
 import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.Bootcamp;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,9 @@ class EnrollPersonUseCaseTest {
 
     @Mock
     private BootcampGateway bootcampGateway;
+
+    @Mock
+    private ReportGatewayPort reportGatewayPort;
 
     @InjectMocks
     private EnrollPersonUseCase enrollPersonUseCase;
@@ -74,6 +78,8 @@ class EnrollPersonUseCaseTest {
         verify(bootcampPersonPersistencePort).findBootcampIdsByPersonId(personId);
         verify(bootcampGateway).getBootcampsDetails(List.of(bootcampId), messageId);
         verify(bootcampPersonPersistencePort).saveEnrollment(personId, bootcampId);
+        verify(reportGatewayPort).notifyEnrollmentIncrement(bootcampId);
+
     }
 
     @Test
@@ -153,5 +159,34 @@ class EnrollPersonUseCaseTest {
 
         verify(bootcampGateway).getBootcampsDetails(any(), eq(messageId));
         verify(bootcampPersonPersistencePort, never()).saveEnrollment(any(), any());
+    }
+
+    @Test
+    void shouldEnrollSuccessfullyWhenDatesDoNotOverlap() {
+        // Arrange
+        Long activeBootcampId = 2L;
+        LocalDate startDateActive = LocalDate.of(2026, 1, 1); // Fechas muy lejanas (enero)
+        LocalDate startDateTarget = LocalDate.of(2026, 6, 1); // Bootcamp al que se inscribe (junio)
+
+        Bootcamp activeBootcamp = new Bootcamp(activeBootcampId, "Old Bootcamp", startDateActive, 4);
+        Bootcamp targetBootcamp = new Bootcamp(bootcampId, "New Bootcamp", startDateTarget, 6);
+
+        when(personPersistencePort.saveOrGetPerson(person)).thenReturn(Mono.just(personId));
+        when(bootcampPersonPersistencePort.findBootcampIdsByPersonId(personId))
+                .thenReturn(Flux.just(activeBootcampId));
+        when(bootcampGateway.getBootcampsDetails(List.of(activeBootcampId, bootcampId), messageId))
+                .thenReturn(Flux.just(activeBootcamp, targetBootcamp));
+        when(bootcampPersonPersistencePort.saveEnrollment(personId, bootcampId)).thenReturn(Mono.empty());
+
+        // Act & Assert
+        StepVerifier.create(enrollPersonUseCase.enrollPerson(person, bootcampId, messageId))
+                .verifyComplete();
+
+        // Verify interactions
+        verify(personPersistencePort).saveOrGetPerson(person);
+        verify(bootcampPersonPersistencePort).findBootcampIdsByPersonId(personId);
+        verify(bootcampGateway).getBootcampsDetails(List.of(activeBootcampId, bootcampId), messageId);
+        verify(bootcampPersonPersistencePort).saveEnrollment(personId, bootcampId);
+        verify(reportGatewayPort).notifyEnrollmentIncrement(bootcampId);
     }
 }

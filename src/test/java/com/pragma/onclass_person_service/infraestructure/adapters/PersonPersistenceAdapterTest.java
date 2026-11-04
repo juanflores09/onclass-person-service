@@ -35,12 +35,13 @@ class PersonPersistenceAdapterTest {
         person.setLastName("Flores");
         person.setFirstName("Juan");
         person.setEmail("juan@example.com");
+        person.setDocumentNumber("123456");
 
         PersonEntity existingEntity = new PersonEntity();
         existingEntity.setId(10L);
         existingEntity.setEmail("juan@example.com");
-
-        when(repository.findByEmail("juan@example.com"))
+        existingEntity.setDocumentNumber("123456");
+        when(repository.findByEmailOrDocumentNumber("juan@example.com","123456"))
                 .thenReturn(Mono.just(existingEntity));
         lenient().when(repository.save(any())).thenReturn(Mono.just(new PersonEntity()));
 
@@ -52,7 +53,7 @@ class PersonPersistenceAdapterTest {
                 .expectNext(10L)
                 .verifyComplete();
 
-        verify(repository, times(1)).findByEmail("juan@example.com");
+        verify(repository, times(1)).findByEmailOrDocumentNumber("juan@example.com", "123456");
     }
     @Test
     void shouldSaveAndReturnNewPersonIdWhenEmailDoesNotExist() {
@@ -61,12 +62,13 @@ class PersonPersistenceAdapterTest {
         person.setLastName("Flores");
         person.setFirstName("Juan");
         person.setEmail("juan@example.com");
+        person.setDocumentNumber("123456");
 
         PersonEntity mappedEntity = new PersonEntity();
         PersonEntity savedEntity = new PersonEntity();
         savedEntity.setId(15L);
 
-        when(repository.findByEmail("juan@example.com"))
+        when(repository.findByEmailOrDocumentNumber("juan@example.com", "123456"))
                 .thenReturn(Mono.empty());
         when(personMapper.personToPersonEntity(person))
                 .thenReturn(mappedEntity);
@@ -81,7 +83,7 @@ class PersonPersistenceAdapterTest {
                 .expectNext(15L)
                 .verifyComplete();
 
-        verify(repository, times(1)).findByEmail("juan@example.com");
+        verify(repository, times(1)).findByEmailOrDocumentNumber("juan@example.com", "123456");
         verify(personMapper, times(1)).personToPersonEntity(person);
         verify(repository, times(1)).save(mappedEntity);
     }
