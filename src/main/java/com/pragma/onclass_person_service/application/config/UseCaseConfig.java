@@ -27,7 +27,8 @@ public class UseCaseConfig {
 
     @Bean
     public GetMostPopularEnrollmentsServicePort getMostPopularEnrollmentsServicePort(
-            BootcampPersonPersistencePort bootcampPersonPersistencePort){
-        return new GetMostPopularEnrollmentsUseCase(bootcampPersonPersistencePort);
+            BootcampPersonPersistencePort bootcampPersonPersistencePort,
+            PersonPersistencePort personPersistencePort){
+        return new GetMostPopularEnrollmentsUseCase(bootcampPersonPersistencePort, personPersistencePort);
     }
 }

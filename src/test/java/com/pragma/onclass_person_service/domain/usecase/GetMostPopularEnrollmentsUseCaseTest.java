@@ -5,6 +5,7 @@ import com.pragma.onclass_person_service.domain.exceptions.BusinessException;
 import com.pragma.onclass_person_service.domain.model.EnrolledPerson;
 import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
+import com.pragma.onclass_person_service.domain.spi.PersonPersistencePort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +23,9 @@ class GetMostPopularEnrollmentsUseCaseTest {
 
     @Mock
     private BootcampPersonPersistencePort bootcampPersonPersistencePort;
+
+    @Mock
+    private PersonPersistencePort personPersistencePort;
 
     @InjectMocks
     private GetMostPopularEnrollmentsUseCase getMostPopularEnrollmentsUseCase;
@@ -45,7 +49,7 @@ class GetMostPopularEnrollmentsUseCaseTest {
 
         when(bootcampPersonPersistencePort.findMostPopularBootcampId())
                 .thenReturn(Mono.just(bootcampId));
-        when(bootcampPersonPersistencePort.findPersonIdsByBootcampId(bootcampId))
+        when(personPersistencePort.findPersonsByBootcampId(bootcampId))
                 .thenReturn(Flux.just(person1, person2));
 
         // Act & Assert
@@ -68,7 +72,7 @@ class GetMostPopularEnrollmentsUseCaseTest {
 
         // Verify interactions
         verify(bootcampPersonPersistencePort).findMostPopularBootcampId();
-        verify(bootcampPersonPersistencePort).findPersonIdsByBootcampId(bootcampId);
+        verify(personPersistencePort).findPersonsByBootcampId(bootcampId);
     }
 
     @Test
@@ -88,6 +92,6 @@ class GetMostPopularEnrollmentsUseCaseTest {
 
         // Verify interactions
         verify(bootcampPersonPersistencePort).findMostPopularBootcampId();
-        verify(bootcampPersonPersistencePort, never()).findPersonIdsByBootcampId(any());
+        verify(personPersistencePort, never()).findPersonsByBootcampId(any());
     }
 }

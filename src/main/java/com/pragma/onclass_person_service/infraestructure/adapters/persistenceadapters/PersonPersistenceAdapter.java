@@ -7,6 +7,7 @@ import com.pragma.onclass_person_service.infraestructure.adapters.persistenceada
 import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.PersonMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
@@ -24,6 +25,13 @@ public class PersonPersistenceAdapter implements PersonPersistencePort {
                         repository.save(personMapper.personToPersonEntity(person))
                                 .map(PersonEntity::getId)
                 );
+    }
+
+
+    @Override
+    public Flux<Person> findPersonsByBootcampId(Long bootcampId) {
+        return repository.findPersonsByBootcampId(bootcampId)
+                .map(personMapper::personEntityToPerson);
     }
 
 }

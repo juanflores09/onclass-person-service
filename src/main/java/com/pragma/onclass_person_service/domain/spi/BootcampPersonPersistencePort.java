@@ -9,5 +9,5 @@ public interface BootcampPersonPersistencePort {
     Flux<Long> findBootcampIdsByPersonId(Long personId);
     Mono<Void> saveEnrollment(Long personId, Long bootcampId);
     Mono<Long> findMostPopularBootcampId();
-    Flux<Person> findPersonIdsByBootcampId(Long bootcampId);
+
 }

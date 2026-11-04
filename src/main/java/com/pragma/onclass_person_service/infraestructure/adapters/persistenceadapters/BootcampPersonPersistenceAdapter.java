@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono;
 public class BootcampPersonPersistenceAdapter implements BootcampPersonPersistencePort {
 
     private final SpringDataBootcampPersonRepository bootcampPersonRepository;
-    private final PersonMapper personMapper;
 
     @Override
     public Flux<Long> findBootcampIdsByPersonId(Long personId) {
@@ -31,11 +30,5 @@ public class BootcampPersonPersistenceAdapter implements BootcampPersonPersisten
     @Override
     public Mono<Long> findMostPopularBootcampId() {
         return bootcampPersonRepository.findMostPopularBootcampId();
-    }
-
-    @Override
-    public Flux<Person> findPersonIdsByBootcampId(Long bootcampId) {
-        return bootcampPersonRepository.findPersonIdsByBootcampId(bootcampId)
-                .map(personMapper::personEntityToPerson);
     }
 }

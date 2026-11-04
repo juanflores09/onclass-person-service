@@ -16,8 +16,4 @@ public interface SpringDataBootcampPersonRepository extends ReactiveCrudReposito
     @Query("SELECT bootcamp_id FROM bootcamp_person GROUP BY bootcamp_id ORDER BY COUNT(*) DESC LIMIT 1")
     Mono<Long> findMostPopularBootcampId();
 
-    @Query("SELECT p.* FROM person p " +
-            "JOIN bootcamp_person bp on bp.person_id = p.id "+
-            "WHERE bootcamp_id = :bootcampId")
-    Flux<PersonEntity> findPersonIdsByBootcampId(Long bootcampId);
 }

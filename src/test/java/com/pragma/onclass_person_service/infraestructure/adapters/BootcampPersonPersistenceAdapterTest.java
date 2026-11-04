@@ -1,10 +1,9 @@
 package com.pragma.onclass_person_service.infraestructure.adapters;
 
-import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.BootcampPersonPersistenceAdapter;
 import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.BootcampPersonEntity;
-import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.PersonEntity;
 import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.repository.SpringDataBootcampPersonRepository;
+import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.repository.SpringDataPersonRepository;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.PersonMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,31 +83,5 @@ class BootcampPersonPersistenceAdapterTest {
                 .verifyComplete();
 
         verify(bootcampPersonRepository, times(1)).findMostPopularBootcampId();
-    }
-
-    @Test
-    void findPersonIdsByBootcampId_Success() {
-        // Given
-        Long bootcampId = 3L;
-        PersonEntity entity = new PersonEntity();
-        Person personDomain = new Person();
-        personDomain.setFirstName("Juan");
-        personDomain.setEmail("juan@example.com");
-
-        when(bootcampPersonRepository.findPersonIdsByBootcampId(bootcampId))
-                .thenReturn(Flux.just(entity));
-        when(personMapper.personEntityToPerson(entity))
-                .thenReturn(personDomain);
-
-        // When
-        Flux<Person> result = adapter.findPersonIdsByBootcampId(bootcampId);
-
-        // Then
-        StepVerifier.create(result)
-                .expectNext(personDomain)
-                .verifyComplete();
-
-        verify(bootcampPersonRepository, times(1)).findPersonIdsByBootcampId(bootcampId);
-        verify(personMapper, times(1)).personEntityToPerson(entity);
     }
 }

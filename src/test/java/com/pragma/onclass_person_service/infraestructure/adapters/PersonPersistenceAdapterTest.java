@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -86,5 +87,32 @@ class PersonPersistenceAdapterTest {
         verify(repository, times(1)).findByEmailOrDocumentNumber("juan@example.com", "123456");
         verify(personMapper, times(1)).personToPersonEntity(person);
         verify(repository, times(1)).save(mappedEntity);
+    }
+
+
+    @Test
+    void findPersonIdsByBootcampId_Success() {
+        // Given
+        Long bootcampId = 3L;
+        PersonEntity entity = new PersonEntity();
+        Person personDomain = new Person();
+        personDomain.setFirstName("Juan");
+        personDomain.setEmail("juan@example.com");
+
+        when(repository.findPersonsByBootcampId(bootcampId))
+                .thenReturn(Flux.just(entity));
+        when(personMapper.personEntityToPerson(entity))
+                .thenReturn(personDomain);
+
+        // When
+        Flux<Person> result = personPersistenceAdapter.findPersonsByBootcampId(bootcampId);
+
+        // Then
+        StepVerifier.create(result)
+                .expectNext(personDomain)
+                .verifyComplete();
+
+        verify(repository, times(1)).findPersonsByBootcampId(bootcampId);
+        verify(personMapper, times(1)).personEntityToPerson(entity);
     }
 }
