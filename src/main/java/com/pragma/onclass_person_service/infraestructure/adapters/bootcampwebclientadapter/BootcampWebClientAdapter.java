@@ -8,7 +8,7 @@ import com.pragma.onclass_person_service.infraestructure.adapters.persistenceada
 import com.pragma.onclass_person_service.infraestructure.entrypoints.dto.ApiResponseDTO;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.mapper.BootcampMapper;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,11 +18,16 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class BootcampWebClientAdapter implements BootcampGateway {
 
     private final WebClient bootcampWebClient;
     private final BootcampMapper bootcampMapper;
+
+    public BootcampWebClientAdapter(@Qualifier("bootcampWebClient") WebClient bootcampWebClient,
+                                    BootcampMapper bootcampMapper) {
+        this.bootcampWebClient = bootcampWebClient;
+        this.bootcampMapper = bootcampMapper;
+    }
 
     @Override
     public Flux<Bootcamp> getBootcampsDetails(List<Long> bootcampIds, String messageId) {

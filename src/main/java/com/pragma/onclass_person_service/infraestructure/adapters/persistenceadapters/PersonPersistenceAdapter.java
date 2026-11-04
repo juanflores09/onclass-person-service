@@ -18,7 +18,7 @@ public class PersonPersistenceAdapter implements PersonPersistencePort {
 
     @Override
     public Mono<Long> saveOrGetPerson(Person person) {
-        return repository.findByEmail(person.getEmail())
+        return repository.findByEmailOrDocumentNumber(person.getEmail(), person.getDocumentNumber())
                 .map(PersonEntity::getId)
                 .switchIfEmpty(
                         repository.save(personMapper.personToPersonEntity(person))

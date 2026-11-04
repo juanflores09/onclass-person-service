@@ -7,5 +7,5 @@ import reactor.core.publisher.Mono;
 public interface SpringDataPersonRepository extends ReactiveCrudRepository<PersonEntity, Long> {
 
     Mono<PersonEntity> findByDocumentNumber(String documentNumber);
-    Mono<PersonEntity> findByEmail(String email);
+    Mono<PersonEntity> findByEmailOrDocumentNumber(String email, String documentNumber);
 }

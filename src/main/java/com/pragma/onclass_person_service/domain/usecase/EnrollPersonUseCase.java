@@ -7,6 +7,7 @@ import com.pragma.onclass_person_service.domain.model.Person;
 import com.pragma.onclass_person_service.domain.spi.BootcampGateway;
 import com.pragma.onclass_person_service.domain.spi.BootcampPersonPersistencePort;
 import com.pragma.onclass_person_service.domain.spi.PersonPersistencePort;
+import com.pragma.onclass_person_service.domain.spi.ReportGatewayPort;
 import com.pragma.onclass_person_service.infraestructure.adapters.persistenceadapters.entity.Bootcamp;
 import com.pragma.onclass_person_service.infraestructure.entrypoints.util.Constants;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
     private final PersonPersistencePort personPersistencePort;
     private final BootcampPersonPersistencePort bootcampPersonPersistencePort;
     private final BootcampGateway bootcampGateway;
+    private final ReportGatewayPort reportGatewayPort;
 
     @Override
     public Mono<Void> enrollPerson(Person person, Long bootcampId, String messageId) {
@@ -66,7 +68,9 @@ public class EnrollPersonUseCase implements EnrollPersonServicePort {
                                                                 Constants.MESSAGE_ERROR_ENROLL, TechnicalMessage.DATE_OVERLAP));
                                                     }
                                                 }
-                                                return bootcampPersonPersistencePort.saveEnrollment(personId, bootcampId);
+                                                return bootcampPersonPersistencePort.saveEnrollment(personId, bootcampId)
+                                                        // Trigger the asynchronous notification to the reporting service
+                                                        .doOnSuccess(v -> reportGatewayPort.notifyEnrollmentIncrement(bootcampId));
                                             });
                                 })
                 );
